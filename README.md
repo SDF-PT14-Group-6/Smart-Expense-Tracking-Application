@@ -4,7 +4,7 @@ SmartExpense is a full-stack personal finance application designed to help users
 
 The application provides a simple and user-friendly platform where users can securely manage their financial transactions and access meaningful financial information through a dashboard.
 
-https://smart-expense-tracking-application-two.vercel.app/
+https://smart-expense-tracking-application-ld8s-jwnrh7gv5.vercel.app/
 
 ## Project Overview
 
