@@ -23,3 +23,41 @@ dist-ssr
 *.sln
 *.sw?
 .env
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.python-version
+
+# Python virtual environments
+.venv/
+venv/
+env/
+
+# Python testing and coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Environment variables
+.env
+.env.*
+!.env.example
+# Python testing and coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Environment variables
+.env.*
+!.env.example

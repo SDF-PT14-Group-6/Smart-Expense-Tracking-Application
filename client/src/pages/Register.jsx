@@ -9,6 +9,8 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [registerForm, setRegisterForm] = useState({
     name: "",
@@ -17,21 +19,37 @@ export default function Register() {
     confirmPassword: "",
   });
 
-  const handleRegister = (event) => {
+  const handleRegister = async (event) => {
     event.preventDefault();
+    setMessage("");
+    setError("");
 
     if (registerForm.password !== registerForm.confirmPassword) {
-      setMessage("Passwords do not match.");
+      setError("Passwords do not match.");
       return;
     }
 
-    register(registerForm.name, registerForm.email);
+    if (registerForm.password.length < 8) {
+      setError("Your password must contain at least 8 characters.");
+      return;
+    }
 
-    setMessage("Account created successfully!");
+    setIsSubmitting(true);
 
-    setTimeout(() => {
+    try {
+      await register(
+        registerForm.name.trim(),
+        registerForm.email.trim(),
+        registerForm.password
+      );
+
+      setMessage("Account created successfully. Opening your dashboard...");
       navigate("/dashboard", { replace: true });
-    }, 500);
+    } catch (err) {
+      setError(err.message || "Registration failed. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -100,7 +118,7 @@ export default function Register() {
                 })
               }
               required
-              minLength="6"
+              minLength="8"
             />
 
             <button
@@ -127,7 +145,7 @@ export default function Register() {
                 })
               }
               required
-              minLength="6"
+              minLength="8"
             />
 
             <button
@@ -141,13 +159,21 @@ export default function Register() {
             </button>
           </div>
 
-          <button className="primary-button" type="submit">
-            Create Account
+          <button
+            className="primary-button"
+            type="submit"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "Creating Account..." : "Create Account"}
           </button>
         </form>
 
         {message && (
           <p className="success-message">{message}</p>
+        )}
+
+        {error && (
+          <p className="error-message" role="alert">{error}</p>
         )}
 
         <p className="switch-text">

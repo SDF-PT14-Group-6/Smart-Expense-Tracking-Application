@@ -9,25 +9,33 @@ export default function Login() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [loginForm, setLoginForm] = useState({
     email: "",
     password: "",
   });
 
-  const handleLogin = (event) => {
+  const handleLogin = async (event) => {
     event.preventDefault();
+    setMessage("");
+    setError("");
+    setIsSubmitting(true);
 
-    login(loginForm.email);
+    try {
+      await login(loginForm.email.trim(), loginForm.password);
+      setMessage("Login successful. Welcome to SmartExpense!");
 
-    setMessage("Login successful. Welcome to SmartExpense!");
+      const redirectTo =
+        location.state?.from?.pathname || "/dashboard";
 
-    const redirectTo =
-      location.state?.from?.pathname || "/dashboard";
-
-    setTimeout(() => {
       navigate(redirectTo, { replace: true });
-    }, 500);
+    } catch (err) {
+      setError(err.message || "Login failed. Please check your details.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -91,13 +99,21 @@ export default function Login() {
             </button>
           </div>
 
-          <button className="primary-button" type="submit">
-            Sign In
+          <button
+            className="primary-button"
+            type="submit"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "Signing In..." : "Sign In"}
           </button>
         </form>
 
         {message && (
           <p className="success-message">{message}</p>
+        )}
+
+        {error && (
+          <p className="error-message" role="alert">{error}</p>
         )}
 
         <p className="switch-text">

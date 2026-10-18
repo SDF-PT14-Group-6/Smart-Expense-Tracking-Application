@@ -1,613 +1,380 @@
 # SmartExpense — Smart Expense Tracking Application
 
-SmartExpense is a full-stack personal finance application designed to help users manage their income and expenses, monitor their financial position, and understand their spending patterns.
+SmartExpense is a full-stack personal finance application designed to help users record, organize, and monitor their income and expenses. It provides a user-friendly interface for managing financial transactions, viewing financial summaries, and understanding spending patterns through a dashboard.
 
-The application provides a simple and user-friendly platform where users can securely manage their financial transactions and access meaningful financial information through a dashboard.
+The application combines a React frontend with a Flask REST API and a SQLAlchemy database layer. It is being developed collaboratively as part of a software engineering assignment, using feature branches, pull requests, code reviews, and version control.
 
-https://smart-expense-tracking-application-ld8s-jwnrh7gv5.vercel.app/
+**Live Demo:** https://smart-expense-tracking-application-ld8s-jwnrh7gv5.vercel.app/
 
-## Project Overview
+**Group Repository:** https://github.com/SDF-PT14-Group-6/Smart-Expense-Tracking-Application
 
-Managing personal finances can be difficult when income and expenses are recorded manually or scattered across different platforms.
+## Table of Contents
 
-SmartExpense aims to provide a centralized digital solution that enables users to:
+- [Project Objectives](#project-objectives)
+- [Technology Stack](#technology-stack)
+- [System Architecture](#system-architecture)
+- [Application Features](#application-features)
+- [Current Implementation Status](#current-implementation-status)
+- [Project Structure](#project-structure)
+- [Prerequisites](#prerequisites)
+- [Installation and Setup](#installation-and-setup)
+- [Running the Frontend](#running-the-frontend)
+- [Running the Flask Backend](#running-the-flask-backend)
+- [Database and Migrations](#database-and-migrations)
+- [Testing](#testing)
+- [Git Collaboration Workflow](#git-collaboration-workflow)
+- [Security Considerations](#security-considerations)
+- [Future Development](#future-development)
+- [Team Contributions](#team-contributions)
+- [Repository](#repository)
 
-* Record income and expenses
-* Track their current financial balance
-* Categorize transactions
-* View spending patterns
-* Search and filter transactions
-* Manage their financial records securely
-* Access their information through a responsive web application
+## Project Objectives
 
-The project is being developed as a collaborative full-stack application using modern web development technologies.
+The objectives of SmartExpense are to:
 
----
-
-## Project Goals
-
-The main goals of SmartExpense are to:
-
-1. Provide an easy-to-use personal finance management platform.
-2. Allow users to securely manage their financial transactions.
-3. Provide a clear dashboard for understanding financial performance.
-4. Support transaction search and filtering.
-5. Protect user information through authentication and authorization.
-6. Demonstrate practical full-stack software engineering skills.
-7. Apply collaborative Git and GitHub development practices.
-
----
+- Provide an organized interface for managing personal financial records.
+- Help users monitor income, expenses, and balances.
+- Present financial summaries through a dashboard.
+- Support creating, viewing, editing, and deleting expense records.
+- Establish a maintainable frontend and backend architecture.
+- Apply software engineering practices, including testing, migrations, version control, and collaborative code review.
 
 ## Technology Stack
 
 ### Frontend
 
-* React.js
-* Vite
-* JavaScript
-* HTML5
-* CSS3
+- React.js
+- Vite
+- JavaScript
+- HTML5 and CSS3
+- Lucide React icons
+- Fetch API for backend communication
 
 ### Backend
 
-* Node.js
-* Express.js
-* REST API
-
-### Authentication & Security
-
-* JWT authentication
-* bcrypt password hashing
-* CORS
-* Environment variables using dotenv
+- Python
+- Flask
+- Flask-CORS
+- Flask-SQLAlchemy
+- Flask-Migrate
+- PyJWT
+- Gunicorn
 
 ### Database
 
-The project database layer is currently being finalized by the team. The application architecture is designed so that the React frontend communicates with the Express backend, while the backend manages communication with the selected database.
+- SQLAlchemy ORM
+- SQLite for local development by default
+- PostgreSQL support through database configuration
 
----
+### Development and Deployment
+
+- Git and GitHub
+- Feature branches and pull requests
+- Vercel for frontend deployment
+- Render for backend deployment
+- ESLint and Vite build tools
 
 ## System Architecture
 
-```text
-                    SMARTEXPENSE
+SmartExpense uses a client-server architecture:
 
-                        USER
-                          |
-                          v
-                +-------------------+
-                |   React Frontend  |
-                |       Vite        |
-                +-------------------+
-                          |
-                          | HTTP / REST API
-                          v
-                +-------------------+
-                |  Express Backend  |
-                |    Node.js API    |
-                +-------------------+
-                          |
-                          v
-                +-------------------+
-                |      Database     |
-                +-------------------+
-```
+1. **React frontend:** Provides the interface for authentication, dashboard summaries, and expense management.
+2. **Flask REST API:** Handles authentication and financial transaction requests.
+3. **SQLAlchemy:** Provides database models and database access.
+4. **Database:** Stores application records using the configured database connection.
+5. **Deployment:** Vercel hosts the frontend, while Render hosts the Flask backend.
 
-The frontend does not communicate directly with the database.
+The frontend communicates with the backend through HTTP requests. The frontend API base URL is configured using the `VITE_API_URL` environment variable.
 
-Instead:
-
-**React → Express REST API → Database**
-
-This separation improves maintainability, security and scalability.
-
----
-
-# Key Features
-
-## 1. User Authentication
-
-The application is designed to provide secure user authentication, including:
-
-* User registration
-* User login
-* Password protection
-* JWT-based authentication
-* User authorization
-* Protected user resources
-
----
-
-## 2. Financial Dashboard
-
-The dashboard will provide users with an overview of their financial position, including:
-
-* Total income
-* Total expenses
-* Current balance
-* Spending by category
-* Recent transactions
-* Financial summaries
-
-The dashboard is intended to make financial information easier to understand at a glance.
-
----
-
-## 3. Transaction Management
-
-Users will be able to manage their financial transactions.
-
-Planned transaction functionality includes:
-
-* Add income
-* Add expenses
-* View transactions
-* Edit transactions
-* Delete transactions
-* Categorize transactions
-* Search transactions
-* Filter transactions by category
-* Filter transactions by date
-
----
-
-## 4. User Data Protection
-
-Each authenticated user should only be able to access and manage their own financial records.
-
-The backend will enforce authorization so that one user cannot access another user's transactions.
-
-Security considerations include:
-
-* Password hashing using bcrypt
-* JWT authentication
-* Protected API routes
-* Environment variables for sensitive configuration
-* Server-side validation
-* User-specific data access
-
----
-
-# REST API
-
-The backend is being developed using Express.js.
-
-Planned API endpoints include:
+## Application Features
 
 ### Authentication
 
-```text
-POST /api/auth/signup
-POST /api/auth/login
-GET  /api/auth/me
-```
+- User registration.
+- User login.
+- Authentication integration with the backend.
+- Token-based authentication support.
 
-### Transactions
+### Dashboard
 
-```text
-GET    /api/transactions
-POST   /api/transactions
-GET    /api/transactions/:id
-PATCH  /api/transactions/:id
-DELETE /api/transactions/:id
-```
+- Income, expense, and balance summaries.
+- Financial overview cards.
+- Transaction information for monitoring spending.
 
-The API will act as the communication layer between the React frontend and the database.
+### Expense Management
 
----
+- Create expense records.
+- View transactions.
+- Edit existing expense records.
+- Delete expense records.
+- Review and organize spending information.
 
-# Current Project Structure
+### User Interface
 
-The project separates the frontend and backend into their own directories:
+- React-based application pages and components.
+- Responsive styling.
+- Reusable dashboard components.
+- Navigation between relevant application views.
+
+*Feature availability may depend on the deployed version and backend configuration.*
+
+## Current Implementation Status
+
+Development work includes:
+
+- React and Vite frontend setup.
+- Flask REST API foundation.
+- SQLAlchemy models and database migration setup.
+- Authentication and transaction API development.
+- Removal of the obsolete Express backend starter.
+- React frontend integration with the Flask API.
+- Gunicorn configuration for production deployment.
+- Dashboard and transaction interface updates.
+- Frontend deployment to Vercel.
+- Backend deployment to Render.
+
+The deployed Flask health endpoint is:
+
+https://smart-expense-tracking-application.onrender.com/api/health
+
+It can be used to check whether the API is responding.
+
+## Project Structure
+
+The repository contains frontend and backend components. The exact structure may evolve during development.
 
 ```text
 Smart-Expense-Tracking-Application/
-│
 ├── client/
 │   ├── public/
 │   ├── src/
-│   │   ├── assets/
+│   │   ├── components/
+│   │   ├── context/
+│   │   ├── pages/
 │   │   ├── App.jsx
 │   │   ├── App.css
-│   │   ├── index.css
-│   │   └── main.jsx
+│   │   └── index.css
 │   ├── package.json
-│   ├── package-lock.json
 │   └── vite.config.js
-│
 ├── server/
-│   ├── src/
-│   │   └── server.js
-│   ├── package.json
-│   └── package-lock.json
-│
-├── .gitignore
+│   └── flask_api/
+│       ├── app/
+│       ├── migrations/
+│       ├── requirements.txt
+│       └── run.py
 └── README.md
 ```
 
----
-
-# Current Development Progress
-
-### Frontend
-
-The initial SmartExpense landing page has been implemented.
-
-Current frontend work includes:
-
-* SmartExpense branding
-* Project introduction
-* Login button
-* Create Account button
-* Responsive-friendly layout
-* Initial styling
-
-The frontend was tested successfully using:
-
-```bash
-npm run build
-```
-
-The application was also tested locally using the Vite development server.
-
----
-
-### Backend
-
-The initial Express backend foundation has been implemented.
-
-Current backend work includes:
-
-* Express server setup
-* CORS configuration
-* JSON request handling
-* Environment variable support
-* Initial API health route
-
-The initial API endpoint is:
-
-```text
-GET /
-```
-
-It returns:
-
-```json
-{
-  "message": "Smart Expense Tracking API is running"
-}
-```
-
-The backend currently runs on port:
-
-```text
-5555
-```
-
----
-
-# Running the Project Locally
-
 ## Prerequisites
 
-Make sure you have installed:
+Install the following before running the application locally:
 
-* Git
-* Node.js
-* npm
-* VS Code or another code editor
+- Git
+- Node.js and npm
+- Python
+- pip
+- Visual Studio Code or another code editor
 
----
+## Installation and Setup
 
-## Clone the Repository
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/SDF-PT14-Group-6/Smart-Expense-Tracking-Application.git
-```
-
-Move into the project:
-
-```bash
 cd Smart-Expense-Tracking-Application
 ```
 
----
-
-# Running the Frontend
-
-Move into the client directory:
+### 2. Set up the frontend
 
 ```bash
 cd client
-```
-
-Install dependencies:
-
-```bash
 npm install
 ```
 
-Start the development server:
+For local development, configure the frontend environment variable as appropriate:
+
+```env
+VITE_API_URL=http://127.0.0.1:5000
+```
+
+### 3. Set up the Flask backend
+
+From the repository root:
+
+```bash
+cd server/flask_api
+python -m venv venv
+```
+
+Activate the virtual environment on Ubuntu or WSL:
+
+```bash
+source venv/bin/activate
+```
+
+Install backend dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+Configure required environment variables according to the backend configuration. Use a secure `SECRET_KEY` and the appropriate database connection string where required. Do not commit secrets or `.env` files to GitHub.
+
+## Running the Frontend
+
+From the `client` directory, run:
 
 ```bash
 npm run dev
 ```
 
-Vite will provide a local development URL, normally similar to:
+Vite will display the development URL in the terminal, usually:
 
-```text
 http://localhost:5173
-```
 
----
+Open the displayed URL in your browser.
 
-# Running the Backend
+## Running the Flask Backend
 
-Open another terminal and move into the server directory:
-
-```bash
-cd Smart-Expense-Tracking-Application/server
-```
-
-Install dependencies:
+From `server/flask_api`, activate the virtual environment and run:
 
 ```bash
-npm install
+python run.py
 ```
 
-Start the server:
+The API commonly runs at:
+
+http://127.0.0.1:5000
+
+Check the health endpoint at:
+
+http://127.0.0.1:5000/api/health
+
+For production deployment, the configured Gunicorn command is:
 
 ```bash
-node src/server.js
+gunicorn run:app
 ```
 
-The backend should run on:
+## Database and Migrations
 
-```text
-http://localhost:5555
-```
+The application uses SQLAlchemy for database interaction and Flask-Migrate for database migrations.
 
-Test the API:
+Database configuration should be supplied through environment variables where appropriate. Local development may use SQLite, while PostgreSQL can be configured for a hosted environment.
+
+When database models change, create and apply migrations using the commands supported by the Flask application configuration. Review migration files before applying them to a production database.
+
+Do not store production database credentials in source code.
+
+## Testing
+
+Recommended verification before merging includes:
+
+- Installing frontend dependencies successfully.
+- Running the frontend development server.
+- Running ESLint and resolving reported issues.
+- Running the Vite production build.
+- Installing backend dependencies.
+- Checking the Flask health endpoint.
+- Testing registration and login.
+- Verifying dashboard data.
+- Creating, editing, and deleting expense records.
+- Checking frontend-to-backend communication.
+- Reviewing browser console and backend logs.
+- Verifying deployment status on Vercel and Render.
+
+From the `client` directory, the following commands can be used if defined in `package.json`:
 
 ```bash
-curl http://localhost:5555/
-```
-
-Expected response:
-
-```json
-{
-  "message": "Smart Expense Tracking API is running"
-}
-```
-
----
-
-# GitHub Collaboration Workflow
-
-SmartExpense is being developed collaboratively using Git and GitHub.
-
-The team follows a feature-branch workflow:
-
-```text
-              shared dev
-                  |
-        +---------+---------+
-        |         |         |
-        v         v         v
-    feature/   feature/   feature/
-      member      member      member
-        |         |         |
-        v         v         v
-     commits   commits   commits
-        |         |         |
-        +---------+---------+
-                  |
-                  v
-             Pull Request
-                  |
-                  v
-               Review
-                  |
-                  v
-             Merge into dev
-```
-
-### Team Workflow
-
-Each contributor should:
-
-1. Start from the latest `dev` branch.
-2. Create a feature branch.
-3. Work on the assigned feature.
-4. Make meaningful commits.
-5. Push the feature branch to GitHub.
-6. Create a Pull Request.
-7. Have the work reviewed.
-8. Merge the approved Pull Request into `dev`.
-
-Contributors should avoid making changes directly on the shared `dev` branch.
-
----
-
-# Example Feature Branches
-
-Examples include:
-
-```text
-feature/auth-pages
-feature/dashboard
-feature/transactions
-feature/api-integration
-feature/navigation
-feature/financial-reports
-```
-
-Branch names should clearly describe the feature being developed.
-
----
-
-# Git Commit Practices
-
-The team aims to maintain meaningful Git history.
-
-Examples of good commit messages include:
-
-```text
-Create SmartExpense landing page
-Set up Express backend foundation
-Add authentication form
-Implement transaction creation form
-Add transaction dashboard
-Add transaction filtering
-Connect frontend to transactions API
-```
-
-Meaningful incremental commits make it easier to understand the development process and identify individual contributions.
-
----
-
-# Testing
-
-Testing is performed throughout development.
-
-Current checks include:
-
-### Frontend build
-
-```bash
+npm run lint
 npm run build
 ```
 
-### Backend API test
+## Git Collaboration Workflow
+
+The team uses Git and GitHub to coordinate development.
+
+The recommended workflow is:
+
+1. Update the shared development branch.
+2. Create or switch to an appropriate feature branch.
+3. Make focused changes.
+4. Test the changes locally.
+5. Commit with a meaningful message.
+6. Push the feature branch.
+7. Open a pull request against `dev`.
+8. Review changes and resolve conflicts.
+9. Merge after the required checks pass.
+10. Integrate reviewed work into `main` for final submission.
+
+Example commands for updating the shared development branch:
 
 ```bash
-curl http://localhost:5555/
+git switch dev
+git pull upstream dev
 ```
 
-As development continues, additional testing will cover:
+Example commands for creating a feature branch:
 
-* Authentication
-* API endpoints
-* Transaction CRUD operations
-* Authorization
-* Form validation
-* User-specific data access
-* Frontend functionality
+```bash
+git switch -c feature/your-feature-name
+```
 
----
+After making and testing changes:
 
-# Security Considerations
+```bash
+git add <files-you-changed>
+git commit -m "Describe the change clearly"
+git push -u origin feature/your-feature-name
+```
 
-Security is an important part of SmartExpense because the application handles personal financial information.
+Replace example branch names and file paths with the actual values for your work. Review `git status` before committing to avoid including unrelated files.
 
-Planned security measures include:
+## Security Considerations
 
-* Password hashing with bcrypt
-* JWT authentication
-* Protected API routes
-* Authorization checks
-* Environment variables for sensitive configuration
-* CORS configuration
-* Input validation
-* User-specific transaction access
-* Avoiding sensitive information in Git commits
+- Keep secret keys and credentials out of source control.
+- Use environment variables for deployment configuration.
+- Protect authenticated endpoints with appropriate authentication checks.
+- Validate incoming data on the backend.
+- Ensure users can access only records they are authorized to access.
+- Use HTTPS for production traffic.
+- Handle passwords securely and never store them in plaintext.
+- Configure database access permissions appropriately.
+- Review dependencies and deployment logs regularly.
 
-Environment files containing secrets should never be committed to GitHub.
+## Future Development
 
----
+Potential future improvements include:
 
-# Project Development Status
+- More detailed financial reports and visualizations.
+- Income tracking and categorization.
+- Date-based and category-based transaction filtering.
+- Budget limits and spending alerts.
+- Exportable financial reports.
+- Improved automated testing.
+- Persistent production database configuration.
+- Further accessibility and responsive-design improvements.
 
-| Component                  | Status                 |
-| -------------------------- | ---------------------- |
-| React/Vite frontend        | In development         |
-| SmartExpense landing page  | Completed              |
-| Express backend foundation | Completed              |
-| Backend health endpoint    | Completed              |
-| Authentication             | In development         |
-| Database integration       | In development         |
-| Transaction CRUD           | Planned/In development |
-| Dashboard                  | In development         |
-| Search and filtering       | Planned/In development |
-| API integration            | In development         |
-| Testing                    | Ongoing                |
-| Deployment                 | Planned                |
+These are potential enhancements and should not be interpreted as already completed features.
 
----
+## Team Contributions
 
-# Future Improvements
+The application was developed collaboratively. Contributions include frontend development, application pages, dashboard development, transaction management, backend API development, database setup, and deployment.
 
-Future versions of SmartExpense may include:
+| Team member | Contribution |
+|---|---|
+| Maureen Wanjira (123Mwanjira) | React and Vite frontend development, landing page, frontend styling, Flask API integration, testing, and deployment support |
+| Joshua Magolo | Application pages and authentication-related frontend work |
+| Bernard Marangu | Dashboard components and styling |Dashboard updates and integration work |
+| Fatuhdin Ibrahim Ali | Transactions and expense-management features |
+| DiniX-1 | Flask authentication and transaction API work, backend cleanup, and integration support |
 
-* Financial charts and visualizations
-* Advanced spending analytics
-* Monthly financial reports
-* Budget management
-* Savings goals
-* Recurring transactions
-* Exportable financial reports
-* Currency conversion where required
-* Improved mobile responsiveness
-* Deployment to a production environment
-* Additional security and validation features
+This summary describes areas of work and is not an exhaustive list of every contribution. The repository's commits and pull requests provide the detailed development history.
 
----
+## Repository
 
-# Team Collaboration
+**GitHub:** https://github.com/SDF-PT14-Group-6/Smart-Expense-Tracking-Application
 
-This project is being developed as a collaborative software engineering project.
+**Live Frontend:** https://smart-expense-tracking-application-ld8s-jwnrh7gv5.vercel.app/
 
-Team members contribute through:
-
-* Feature branches
-* Meaningful commits
-* Pull Requests
-* Code reviews
-* Testing
-* Documentation
-* Integration of approved features
-
-This approach allows the team to work on different parts of the application while maintaining a clean and traceable Git history.
-
----
-
-# Learning Outcomes
-
-Through the development of SmartExpense, the team is applying practical skills in:
-
-* React development
-* JavaScript
-* Node.js
-* Express.js
-* REST API development
-* Authentication
-* Database integration
-* Git and GitHub
-* Collaborative software development
-* Debugging and testing
-* Software architecture
-* Application security
-* Technical documentation
-
----
-
-# Repository
-
-**GitHub Repository:**
-
-https://github.com/SDF-PT14-Group-6/Smart-Expense-Tracking-Application
-
----
-
-# Project Status
-
-**SmartExpense is currently under active development.**
-
-The initial frontend structure and backend foundation have been established, and the team is continuing development of authentication, database integration, transaction management, dashboard functionality and API integration.
-
----
-
-## License
-
-This project was developed as part of a collaborative software engineering capstone project.
+**Backend Health Check:** https://smart-expense-tracking-application.onrender.com/api/health
