@@ -2,18 +2,6 @@ import { useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { useFinance } from "../context/useFinance";
 
-const categories = [
-  "Food",
-  "Transport",
-  "Utilities",
-  "Shopping",
-  "Entertainment",
-  "Health",
-  "Education",
-  "Rent",
-  "Other",
-];
-
 const paymentMethods = [
   "M-Pesa",
   "Cash",
@@ -25,22 +13,81 @@ export default function EditExpense() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const { expenses, updateExpense } = useFinance();
+  const {
+    expenses,
+    categories,
+    updateExpense,
+    loading,
+    error: financeError,
+  } = useFinance();
 
   const expense = expenses.find(
     (item) => String(item.id) === String(id)
   );
 
-  const [formData, setFormData] = useState(() => ({
-    title: expense?.title || "",
-    amount: expense?.amount || "",
-    category: expense?.category || "Food",
-    date: expense?.date || "",
-    payment: expense?.payment || "M-Pesa",
-    notes: expense?.notes || "",
-  }));
+  if (loading) {
+    return (
+      <div className="empty-state">
+        <p>Loading transaction...</p>
+      </div>
+    );
+  }
+
+  if (!expense) {
+    return (
+      <div className="empty-state">
+        <h1>Expense Not Found</h1>
+
+        <p>
+          The expense you are trying to edit does not exist.
+        </p>
+
+        {financeError && (
+          <p className="error-message">{financeError}</p>
+        )}
+
+        <Link
+          to="/expenses"
+          className="btn btn-primary"
+        >
+          Back to Expenses
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <EditExpenseForm
+      key={expense.id}
+      id={id}
+      expense={expense}
+      categories={categories}
+      updateExpense={updateExpense}
+      navigate={navigate}
+      financeError={financeError}
+    />
+  );
+}
+
+function EditExpenseForm({
+  id,
+  expense,
+  categories,
+  updateExpense,
+  navigate,
+  financeError,
+}) {
+  const [formData, setFormData] = useState({
+    title: expense.title || "",
+    amount: expense.amount ?? "",
+    category_id: String(expense.category_id || ""),
+    date: expense.date || "",
+    payment: expense.payment || "M-Pesa",
+    notes: expense.notes || "",
+  });
 
   const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -51,7 +98,7 @@ export default function EditExpense() {
     }));
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     setError("");
@@ -66,32 +113,36 @@ export default function EditExpense() {
       return;
     }
 
-    updateExpense(id, {
-      ...formData,
-      amount: Number(formData.amount),
-    });
+    if (!formData.category_id) {
+      setError("Please select a category.");
+      return;
+    }
 
-    navigate("/expenses");
+    setSaving(true);
+
+    try {
+      const selectedCategory = categories.find(
+        (category) =>
+          String(category.id) === formData.category_id
+      );
+
+      await updateExpense(id, {
+        title: formData.title,
+        amount: Number(formData.amount),
+        category: selectedCategory?.name || expense.category,
+        category_id: Number(formData.category_id),
+        date: formData.date,
+        payment: formData.payment,
+        notes: formData.notes,
+      });
+
+      navigate("/expenses");
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setSaving(false);
+    }
   };
-
-  if (!expense) {
-    return (
-      <div className="empty-state">
-        <h1>Expense Not Found</h1>
-
-        <p>
-          The expense you are trying to edit does not exist.
-        </p>
-
-        <Link
-          to="/expenses"
-          className="btn btn-primary"
-        >
-          Back to Expenses
-        </Link>
-      </div>
-    );
-  }
 
   return (
     <div className="form-page">
@@ -146,22 +197,27 @@ export default function EditExpense() {
           </div>
 
           <div className="form-group">
-            <label htmlFor="category">
+            <label htmlFor="category_id">
               Category
             </label>
 
             <select
-              id="category"
-              name="category"
-              value={formData.category}
+              id="category_id"
+              name="category_id"
+              value={formData.category_id}
               onChange={handleChange}
+              required
             >
+              <option value="">
+                Select category
+              </option>
+
               {categories.map((category) => (
                 <option
-                  key={category}
-                  value={category}
+                  key={category.id}
+                  value={String(category.id)}
                 >
-                  {category}
+                  {category.name}
                 </option>
               ))}
             </select>
@@ -219,9 +275,9 @@ export default function EditExpense() {
           </div>
         </div>
 
-        {error && (
+        {(error || financeError) && (
           <p className="error-message">
-            {error}
+            {error || financeError}
           </p>
         )}
 
@@ -236,8 +292,9 @@ export default function EditExpense() {
           <button
             type="submit"
             className="btn btn-primary"
+            disabled={saving || categories.length === 0}
           >
-            Save Changes
+            {saving ? "Saving..." : "Save Changes"}
           </button>
         </div>
       </form>

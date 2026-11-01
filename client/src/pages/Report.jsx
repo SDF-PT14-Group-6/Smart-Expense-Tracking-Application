@@ -1,14 +1,26 @@
+
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useFinance } from "../context/useFinance";
 
+const formatCurrency = (amount) =>
+  `KSh ${Number(amount || 0).toLocaleString("en-KE", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+
 export default function Report() {
   const {
-    expenses,
-    income,
+    expenses = [],
+    income = [],
     totals,
-    categoryTotals,
+    categoryTotals = {},
   } = useFinance();
+
+  const expenseTransactions = useMemo(
+    () => expenses.filter((item) => item.type === "expense"),
+    [expenses]
+  );
 
   const categories = useMemo(() => {
     return Object.entries(categoryTotals).sort(
@@ -18,9 +30,10 @@ export default function Report() {
 
   const highestCategory = categories[0];
 
+  // Average is calculated using expense transactions only.
   const averageExpense =
-    expenses.length > 0
-      ? totals.expenses / expenses.length
+    expenseTransactions.length > 0
+      ? totals.expenses / expenseTransactions.length
       : 0;
 
   const savingsRate =
@@ -35,7 +48,6 @@ export default function Report() {
 
   return (
     <div className="reports-page">
-
       {/* Page Header */}
       <div className="page-heading">
         <div>
@@ -53,22 +65,19 @@ export default function Report() {
           to="/expenses/add"
           className="btn btn-primary"
         >
-          + Add Expense
+          + Add Transaction
         </Link>
       </div>
 
       {/* Financial Statistics */}
       <div className="stats-grid">
-
         <div className="stat-card income">
           <div className="stat-card-header">
             <span>Total Income</span>
             <span className="stat-icon">↗</span>
           </div>
 
-          <h2>
-            KSh {totals.income.toLocaleString()}
-          </h2>
+          <h2>{formatCurrency(totals.income)}</h2>
 
           <p>
             {income.length} income transaction
@@ -82,14 +91,11 @@ export default function Report() {
             <span className="stat-icon">↘</span>
           </div>
 
-          <h2>
-            KSh {totals.expenses.toLocaleString()}
-          </h2>
+          <h2>{formatCurrency(totals.expenses)}</h2>
 
           <p>
-            <p>
-             Configured monthly income
-          </p>
+            {expenseTransactions.length} expense transaction
+            {expenseTransactions.length !== 1 ? "s" : ""}
           </p>
         </div>
 
@@ -99,9 +105,7 @@ export default function Report() {
             <span className="stat-icon">◈</span>
           </div>
 
-          <h2>
-            KSh {totals.balance.toLocaleString()}
-          </h2>
+          <h2>{formatCurrency(totals.balance)}</h2>
 
           <p>Income minus expenses</p>
         </div>
@@ -112,21 +116,16 @@ export default function Report() {
             <span className="stat-icon">%</span>
           </div>
 
-          <h2>
-            {savingsRate.toFixed(1)}%
-          </h2>
+          <h2>{savingsRate.toFixed(1)}%</h2>
 
           <p>Percentage of income remaining</p>
         </div>
-
       </div>
 
       {/* Report Sections */}
       <div className="dashboard-grid">
-
         {/* Spending Categories */}
         <section className="panel">
-
           <div className="panel-header">
             <div>
               <h2>Spending by Category</h2>
@@ -139,47 +138,38 @@ export default function Report() {
 
           {categories.length > 0 ? (
             <div className="report-categories">
+              {categories.map(([category, amount]) => {
+                const percentage =
+                  totals.expenses > 0
+                    ? (amount / totals.expenses) * 100
+                    : 0;
 
-              {categories.map(
-                ([category, amount]) => {
-                  const percentage =
-                    totals.expenses > 0
-                      ? (amount / totals.expenses) * 100
-                      : 0;
+                return (
+                  <div
+                    className="report-category"
+                    key={category}
+                  >
+                    <div className="report-category-header">
+                      <strong>{category}</strong>
 
-                  return (
-                    <div
-                      className="report-category"
-                      key={category}
-                    >
-
-                      <div className="report-category-header">
-                        <strong>{category}</strong>
-
-                        <span>
-                          KSh {amount.toLocaleString()}
-                        </span>
-                      </div>
-
-                      <div className="progress-bar">
-                        <div
-                          className="progress-fill"
-                          style={{
-                            width: `${percentage}%`,
-                          }}
-                        ></div>
-                      </div>
-
-                      <small>
-                        {percentage.toFixed(1)}%
-                        {" "}of total expenses
-                      </small>
-
+                      <span>{formatCurrency(amount)}</span>
                     </div>
-                  );
-                }
-              )}
 
+                    <div className="progress-bar">
+                      <div
+                        className="progress-fill"
+                        style={{
+                          width: `${percentage}%`,
+                        }}
+                      ></div>
+                    </div>
+
+                    <small>
+                      {percentage.toFixed(1)}% of total expenses
+                    </small>
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <div className="empty-state">
@@ -190,12 +180,10 @@ export default function Report() {
               </p>
             </div>
           )}
-
         </section>
 
         {/* Financial Insights */}
         <section className="panel">
-
           <div className="panel-header">
             <div>
               <h2>Financial Insights</h2>
@@ -207,18 +195,17 @@ export default function Report() {
           </div>
 
           <div className="insight-list">
-
             <div className="insight">
               <span>↘</span>
 
               <div>
-                <strong>
-                  Highest spending category
-                </strong>
+                <strong>Highest spending category</strong>
 
                 <p>
                   {highestCategory
-                    ? `${highestCategory[0]} — KSh ${highestCategory[1].toLocaleString()}`
+                    ? `${highestCategory[0]} — ${formatCurrency(
+                        highestCategory[1]
+                      )}`
                     : "No data available"}
                 </p>
               </div>
@@ -228,16 +215,10 @@ export default function Report() {
               <span>◈</span>
 
               <div>
-                <strong>
-                  Average expense
-                </strong>
+                <strong>Average expense</strong>
 
                 <p>
-                  KSh{" "}
-                  {Math.round(
-                    averageExpense
-                  ).toLocaleString()}{" "}
-                  per transaction
+                  {formatCurrency(averageExpense)} per transaction
                 </p>
               </div>
             </div>
@@ -246,13 +227,11 @@ export default function Report() {
               <span>%</span>
 
               <div>
-                <strong>
-                  Expense rate
-                </strong>
+                <strong>Expense rate</strong>
 
                 <p>
-                  {expenseRate.toFixed(1)}%
-                  {" "}of your income has been spent.
+                  {expenseRate.toFixed(1)}% of your income has
+                  been spent.
                 </p>
               </div>
             </div>
@@ -261,27 +240,19 @@ export default function Report() {
               <span>✓</span>
 
               <div>
-                <strong>
-                  Current balance
-                </strong>
+                <strong>Current balance</strong>
 
                 <p>
-                  KSh{" "}
-                  {totals.balance.toLocaleString()}
-                  {" "}remaining.
+                  {formatCurrency(totals.balance)} remaining.
                 </p>
               </div>
             </div>
-
           </div>
-
         </section>
-
       </div>
 
       {/* Category Comparison */}
       <section className="panel chart-panel">
-
         <div className="panel-header">
           <div>
             <h2>Category Comparison</h2>
@@ -294,80 +265,61 @@ export default function Report() {
 
         {categories.length > 0 ? (
           <div className="bar-chart">
+            {categories.map(([category, amount]) => {
+              const highestAmount = categories[0][1];
 
-            {categories.map(
-              ([category, amount]) => {
+              const height = Math.max(
+                (amount / highestAmount) * 180,
+                20
+              );
 
-                const highestAmount =
-                  categories[0][1];
-
-                const height = Math.max(
-                  (amount / highestAmount) * 180,
-                  20
-                );
-
-                return (
-                  <div
-                    className="bar-column"
-                    key={category}
-                  >
-
-                    <div className="bar-value">
-                      KSh{" "}
-                      {amount.toLocaleString()}
-                    </div>
-
-                    <div className="bar-container">
-                      <div
-                        className="bar"
-                        style={{
-                          height: `${height}px`,
-                        }}
-                      ></div>
-                    </div>
-
-                    <span>{category}</span>
-
+              return (
+                <div
+                  className="bar-column"
+                  key={category}
+                >
+                  <div className="bar-value">
+                    {formatCurrency(amount)}
                   </div>
-                );
-              }
-            )}
 
+                  <div className="bar-container">
+                    <div
+                      className="bar"
+                      style={{
+                        height: `${height}px`,
+                      }}
+                    ></div>
+                  </div>
+
+                  <span>{category}</span>
+                </div>
+              );
+            })}
           </div>
         ) : (
           <div className="empty-state">
-            <p>
-              No data available for the chart.
-            </p>
+            <p>No data available for the chart.</p>
           </div>
         )}
-
       </section>
 
       {/* Financial Summary */}
       <section className="panel report-summary">
-
         <div>
           <h2>Financial Summary</h2>
 
           <p>
-            You have earned KSh{" "}
-            {totals.income.toLocaleString()} and
-            spent KSh{" "}
-            {totals.expenses.toLocaleString()}.
+            You have earned {formatCurrency(totals.income)} and
+            spent {formatCurrency(totals.expenses)}.
           </p>
         </div>
 
         <div className="report-balance">
           <span>Remaining</span>
 
-          <strong>
-            KSh {totals.balance.toLocaleString()}
-          </strong>
+          <strong>{formatCurrency(totals.balance)}</strong>
         </div>
-
       </section>
-
     </div>
   );
 }

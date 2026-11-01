@@ -10,6 +10,12 @@ class Expense(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     description = db.Column(db.String(255), nullable=False)
+    payment_method = db.Column(
+        db.String(50),
+        nullable=False,
+        default="Cash",
+    )
+    notes = db.Column(db.Text, nullable=True)
     amount = db.Column(db.Numeric(12, 2), nullable=False)
     transaction_type = db.Column(
         db.String(10),
