@@ -36,6 +36,7 @@ def authenticated_user_id():
 
 
 def transaction_to_dict(transaction):
+    """Convert a transaction into a JSON-friendly dictionary."""
     return {
         "id": transaction.id,
         "description": transaction.description,
@@ -44,6 +45,8 @@ def transaction_to_dict(transaction):
         "transaction_date": transaction.transaction_date.isoformat(),
         "category_id": transaction.category_id,
         "category": transaction.category.name,
+        "payment_method": transaction.payment_method,
+        "notes": transaction.notes,
     }
 
 
@@ -56,20 +59,31 @@ def parse_transaction_data(data, existing=None):
 
     description = data.get("description", existing.get("description"))
     amount = data.get("amount", existing.get("amount"))
+
     transaction_type = data.get(
         "transaction_type",
         existing.get("transaction_type", "expense"),
     )
+
     transaction_date = data.get(
         "transaction_date",
         existing.get("transaction_date"),
     )
+
     category_id = data.get("category_id", existing.get("category_id"))
+
+    payment_method = data.get(
+        "payment_method",
+        existing.get("payment_method", "Cash"),
+    )
+
+    notes = data.get("notes", existing.get("notes"))
 
     if not isinstance(description, str) or not description.strip():
         return None, "Description is required."
 
     description = description.strip()
+
     if len(description) > 255:
         return None, "Description must not exceed 255 characters."
 
@@ -81,7 +95,11 @@ def parse_transaction_data(data, existing=None):
     except (InvalidOperation, ValueError):
         return None, "Amount must be a valid number."
 
-    if not amount.is_finite() or amount <= 0 or amount > Decimal("9999999999.99"):
+    if (
+        not amount.is_finite()
+        or amount <= 0
+        or amount > Decimal("9999999999.99")
+    ):
         return None, "Amount must be positive and within the supported limit."
 
     if transaction_type not in ("income", "expense"):
@@ -110,30 +128,51 @@ def parse_transaction_data(data, existing=None):
     if category_id <= 0:
         return None, "A valid category ID is required."
 
+    if not isinstance(payment_method, str) or not payment_method.strip():
+        return None, "Payment method is required."
+
+    payment_method = payment_method.strip()
+
+    if len(payment_method) > 50:
+        return None, "Payment method must not exceed 50 characters."
+
+    if notes is not None and not isinstance(notes, str):
+        return None, "Notes must be text."
+
+    if isinstance(notes, str):
+        notes = notes.strip() or None
+
     return {
         "description": description,
         "amount": amount,
         "transaction_type": transaction_type,
         "transaction_date": parsed_date,
         "category_id": category_id,
+        "payment_method": payment_method,
+        "notes": notes,
     }, None
 
 
 @transactions_bp.get("")
 def list_transactions():
     user_id = authenticated_user_id()
+
     if user_id is None:
         return jsonify({"error": "Authentication required."}), 401
 
     query = db.select(Expense).where(Expense.user_id == user_id)
 
     transaction_type = request.args.get("type")
+
     if transaction_type:
         if transaction_type not in ("income", "expense"):
             return jsonify({
                 "error": "Type must be 'income' or 'expense'."
             }), 400
-        query = query.where(Expense.transaction_type == transaction_type)
+
+        query = query.where(
+            Expense.transaction_type == transaction_type
+        )
 
     start_date = request.args.get("start_date")
     end_date = request.args.get("end_date")
@@ -143,48 +182,65 @@ def list_transactions():
             query = query.where(
                 Expense.transaction_date >= date.fromisoformat(start_date)
             )
+
         if end_date:
             query = query.where(
                 Expense.transaction_date <= date.fromisoformat(end_date)
             )
+
     except ValueError:
         return jsonify({
             "error": "Dates must use YYYY-MM-DD format."
         }), 400
 
     transactions = db.session.scalars(
-        query.order_by(Expense.transaction_date.desc(), Expense.id.desc())
+        query.order_by(
+            Expense.transaction_date.desc(),
+            Expense.id.desc(),
+        )
     ).all()
 
     return jsonify({
-        "transactions": [transaction_to_dict(item) for item in transactions]
+        "transactions": [
+            transaction_to_dict(item) for item in transactions
+        ]
     }), 200
 
 
 @transactions_bp.post("")
 def create_transaction():
     user_id = authenticated_user_id()
+
     if user_id is None:
         return jsonify({"error": "Authentication required."}), 401
 
-    values, error = parse_transaction_data(request.get_json(silent=True))
+    values, error = parse_transaction_data(
+        request.get_json(silent=True)
+    )
+
     if error:
         return jsonify({"error": error}), 400
 
     category = db.session.get(Category, values["category_id"])
+
     if category is None or category.user_id != user_id:
         return jsonify({
             "error": "Category not found for this user."
         }), 404
 
     transaction = Expense(user_id=user_id, **values)
+
     db.session.add(transaction)
 
     try:
         db.session.commit()
+
     except IntegrityError:
         db.session.rollback()
-        return jsonify({"error": "Transaction could not be saved."}), 400
+
+        return jsonify({
+            "error": "Transaction could not be saved."
+        }), 400
 
     return jsonify({
         "message": "Transaction created successfully.",
@@ -195,6 +251,7 @@ def create_transaction():
 @transactions_bp.patch("/<int:transaction_id>")
 def update_transaction(transaction_id):
     user_id = authenticated_user_id()
+
     if user_id is None:
         return jsonify({"error": "Authentication required."}), 401
 
@@ -204,6 +261,7 @@ def update_transaction(transaction_id):
             Expense.user_id == user_id,
         )
     )
+
     if transaction is None:
         return jsonify({"error": "Transaction not found."}), 404
 
@@ -215,12 +273,16 @@ def update_transaction(transaction_id):
             "transaction_type": transaction.transaction_type,
             "transaction_date": transaction.transaction_date,
             "category_id": transaction.category_id,
+            "payment_method": transaction.payment_method,
+            "notes": transaction.notes,
         },
     )
+
     if error:
         return jsonify({"error": error}), 400
 
     category = db.session.get(Category, values["category_id"])
+
     if category is None or category.user_id != user_id:
         return jsonify({
             "error": "Category not found for this user."
@@ -231,9 +293,13 @@ def update_transaction(transaction_id):
 
     try:
         db.session.commit()
+
     except IntegrityError:
         db.session.rollback()
-        return jsonify({"error": "Transaction could not be updated."}), 400
+
+        return jsonify({
+            "error": "Transaction could not be updated."
+        }), 400
 
     return jsonify({
         "message": "Transaction updated successfully.",
@@ -244,6 +310,7 @@ def update_transaction(transaction_id):
 @transactions_bp.delete("/<int:transaction_id>")
 def delete_transaction(transaction_id):
     user_id = authenticated_user_id()
+
     if user_id is None:
         return jsonify({"error": "Authentication required."}), 401
 
@@ -253,10 +320,13 @@ def delete_transaction(transaction_id):
             Expense.user_id == user_id,
         )
     )
+
     if transaction is None:
         return jsonify({"error": "Transaction not found."}), 404
 
     db.session.delete(transaction)
     db.session.commit()
 
-    return jsonify({"message": "Transaction deleted successfully."}), 200
+    return jsonify({
+        "message": "Transaction deleted successfully."
+    }), 200

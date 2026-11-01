@@ -2,18 +2,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useFinance } from "../context/useFinance";
 
-const categories = [
-  "Food",
-  "Transport",
-  "Utilities",
-  "Shopping",
-  "Entertainment",
-  "Health",
-  "Education",
-  "Rent",
-  "Other",
-];
-
 const paymentMethods = [
   "M-Pesa",
   "Cash",
@@ -23,20 +11,35 @@ const paymentMethods = [
 
 export default function AddExpense() {
   const navigate = useNavigate();
-  const { addExpense } = useFinance();
+
+  const {
+    addExpense,
+    categories,
+    loading,
+  } = useFinance();
 
   const [formData, setFormData] = useState({
     title: "",
     amount: "",
-    category: "Food",
+    type: "expense",
+    category_id: "",
     date: new Date().toISOString().split("T")[0],
     payment: "M-Pesa",
     notes: "",
   });
 
   const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
 
-  // Handle form input changes
+  const defaultCategory =
+    categories.find(
+      (category) => category.name.toLowerCase() === "food"
+    ) || categories[0];
+
+  const selectedCategoryId =
+    formData.category_id ||
+    (defaultCategory ? String(defaultCategory.id) : "");
+
   const handleChange = (event) => {
     const { name, value } = event.target;
 
@@ -46,65 +49,107 @@ export default function AddExpense() {
     }));
   };
 
-  // Submit expense
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-
     setError("");
 
-    // Validate amount
+    if (!formData.title.trim()) {
+      setError("Please enter a transaction name.");
+      return;
+    }
+
     if (Number(formData.amount) <= 0) {
       setError("Amount must be greater than zero.");
       return;
     }
 
-    // Add expense to FinanceContext
-    addExpense(formData);
+    if (!selectedCategoryId) {
+      setError("Please select a category.");
+      return;
+    }
 
-    // Go back to expenses page
-    navigate("/expenses");
+    setSaving(true);
+
+    try {
+      const selectedCategory = categories.find(
+        (category) =>
+          String(category.id) === selectedCategoryId
+      );
+
+      await addExpense({
+        title: formData.title,
+        amount: Number(formData.amount),
+        category: selectedCategory?.name || "",
+        category_id: Number(selectedCategoryId),
+        date: formData.date,
+        payment: formData.payment,
+        notes: formData.notes,
+        type: formData.type,
+      });
+
+      navigate("/expenses");
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setSaving(false);
+    }
   };
+
+  const isIncome = formData.type === "income";
 
   return (
     <div className="form-page">
-
-      {/* Page heading */}
       <div className="form-header">
         <span className="eyebrow">Transactions</span>
 
-        <h1>Add Expense</h1>
+        <h1>Add Transaction</h1>
 
         <p>
-          Record a new expense and keep track of your spending.
+          Record your income or expenses and keep track
+          of your finances.
         </p>
       </div>
 
-      {/* Expense form */}
       <form
         className="panel form-card"
         onSubmit={handleSubmit}
       >
-
         <div className="form-grid">
+          <div className="form-group">
+            <label htmlFor="type">
+              Transaction Type
+            </label>
 
-          {/* Expense name */}
+            <select
+              id="type"
+              name="type"
+              value={formData.type}
+              onChange={handleChange}
+              required
+            >
+              <option value="expense">Expense</option>
+              <option value="income">Income</option>
+            </select>
+          </div>
+
           <div className="form-group">
             <label htmlFor="title">
-              Expense Name
+              {isIncome ? "Income Source" : "Expense Name"}
             </label>
 
             <input
               id="title"
               name="title"
               type="text"
-              placeholder="e.g. Groceries"
+              placeholder={
+                isIncome ? "e.g. Salary" : "e.g. Groceries"
+              }
               value={formData.title}
               onChange={handleChange}
               required
             />
           </div>
 
-          {/* Amount */}
           <div className="form-group">
             <label htmlFor="amount">
               Amount (KSh)
@@ -122,30 +167,40 @@ export default function AddExpense() {
             />
           </div>
 
-          {/* Category */}
           <div className="form-group">
-            <label htmlFor="category">
+            <label htmlFor="category_id">
               Category
             </label>
 
             <select
-              id="category"
-              name="category"
-              value={formData.category}
+              id="category_id"
+              name="category_id"
+              value={selectedCategoryId}
               onChange={handleChange}
+              required
+              disabled={loading || categories.length === 0}
             >
+              <option value="">
+                Select category
+              </option>
+
               {categories.map((category) => (
                 <option
-                  key={category}
-                  value={category}
+                  key={category.id}
+                  value={String(category.id)}
                 >
-                  {category}
+                  {category.name}
                 </option>
               ))}
             </select>
+
+            {!loading && categories.length === 0 && (
+              <p className="error-message">
+                No categories found for your account.
+              </p>
+            )}
           </div>
 
-          {/* Date */}
           <div className="form-group">
             <label htmlFor="date">
               Date
@@ -161,7 +216,6 @@ export default function AddExpense() {
             />
           </div>
 
-          {/* Payment method */}
           <div className="form-group">
             <label htmlFor="payment">
               Payment Method
@@ -184,7 +238,6 @@ export default function AddExpense() {
             </select>
           </div>
 
-          {/* Notes */}
           <div className="form-group">
             <label htmlFor="notes">
               Notes
@@ -199,23 +252,20 @@ export default function AddExpense() {
               onChange={handleChange}
             />
           </div>
-
         </div>
 
-        {/* Error message */}
         {error && (
           <div className="error-message">
             {error}
           </div>
         )}
 
-        {/* Buttons */}
         <div className="form-actions">
-
           <button
             type="button"
             className="btn btn-outline"
             onClick={() => navigate("/expenses")}
+            disabled={saving}
           >
             Cancel
           </button>
@@ -223,12 +273,19 @@ export default function AddExpense() {
           <button
             type="submit"
             className="btn btn-primary"
+            disabled={
+              saving ||
+              loading ||
+              categories.length === 0
+            }
           >
-            Save Expense
+            {saving
+              ? "Saving..."
+              : isIncome
+                ? "Save Income"
+                : "Save Expense"}
           </button>
-
         </div>
-
       </form>
     </div>
   );
