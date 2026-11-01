@@ -57,10 +57,11 @@ def transaction_payload(category_id, **overrides):
         "transaction_type": "expense",
         "transaction_date": "2026-10-18",
         "category_id": category_id,
+        "payment_method": "M-Pesa",
+        "notes": "Lunch with colleagues",
     }
     payload.update(overrides)
     return payload
-
 
 def test_transactions_require_authentication(app):
     client = app.test_client()
@@ -68,6 +69,35 @@ def test_transactions_require_authentication(app):
     response = client.get("/api/transactions")
 
     assert response.status_code == 401
+
+def test_update_transaction_payment_method_and_notes(app):
+    client = app.test_client()
+    headers = register_and_login(
+        client,
+        "Maureen",
+        "maureen@example.com",
+    )
+    category_id = create_category(app, "maureen@example.com")
+
+    created = client.post(
+        "/api/transactions",
+        json=transaction_payload(category_id),
+        headers=headers,
+    )
+    transaction_id = created.json["transaction"]["id"]
+
+    updated = client.patch(
+        f"/api/transactions/{transaction_id}",
+        json={
+            "payment_method": "Cash",
+            "notes": "Paid in cash",
+        },
+        headers=headers,
+    )
+
+    assert updated.status_code == 200
+    assert updated.json["transaction"]["payment_method"] == "Cash"
+    assert updated.json["transaction"]["notes"] == "Paid in cash"
 
 
 def test_create_and_list_transaction(app):
@@ -89,12 +119,16 @@ def test_create_and_list_transaction(app):
     assert created.json["transaction"]["description"] == "Lunch"
     assert created.json["transaction"]["amount"] == 450.0
     assert created.json["transaction"]["category"] == "Food"
+    assert created.json["transaction"]["payment_method"] == "M-Pesa"
+    assert created.json["transaction"]["notes"] == "Lunch with colleagues"
 
     listed = client.get("/api/transactions", headers=headers)
 
     assert listed.status_code == 200
     assert len(listed.json["transactions"]) == 1
     assert listed.json["transactions"][0]["description"] == "Lunch"
+    assert listed.json["transactions"][0]["payment_method"] == "M-Pesa"
+    assert listed.json["transactions"][0]["notes"] == "Lunch with colleagues"
 
 
 def test_create_transaction_rejects_invalid_amount(app):
